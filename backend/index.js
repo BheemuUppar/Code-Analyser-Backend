@@ -60,6 +60,7 @@ app.post('/analysCode/zipFile', upload.single('zipFile'), async (req, res)=>{
 app.post('/analysCode/remoteRepo', async (req, res)=>{
 try {
    let zipPath = await  fetchRepoFromGitHub(req.body.url);
+   console.log(zipPath)
    // Step 1: Extract to original path
     const extractTo = extractZipToOriginal(zipPath);
     fs.unlinkSync(zipPath)
@@ -73,6 +74,7 @@ try {
     console.log('\n🤖 Sending project to Gemini...');
    let response =  await sendToGemini(prompt);
 
+   console.log('Response sent');
     res.send(response)
         
 } catch (error) {
@@ -97,3 +99,17 @@ const PORT = process.env.PORT || 3000
 app.listen(PORT, ()=>{
     console.log("Server Started at Port ",PORT )
 })
+
+
+// const INCLUDE_EXTENSIONS = [
+//   '.js', '.ts', '.html', '.css', '.scss',       // Web/Angular/React
+//   '.py',                                         // Python
+//   '.java', '.xml',                               // Java/Spring Boot
+//   '.php',                                        // PHP
+//   '.cs',                                         // C# / .NET
+//   '.dart',                                       // Flutter
+//   '.go',                                         // Go
+//   '.rb',                                         // Ruby
+//   '.vue',                                        // Vue
+//   '.json', '.md',                                // Misc
+// ];

@@ -11,7 +11,75 @@ const API_KEY = 'AIzaSyCYYSQb0PR56YJBXitW7FswXVwqYyqciMk'; // Replace with your 
 
 // 📁 Project Config
 // const PROJECT_PATH = 'C:/code/angular/my-app'; // Update as needed
-const INCLUDE_EXTENSIONS = ['.ts', '.js', '.html', '.css', '.json'];
+//const INCLUDE_EXTENSIONS = ['.ts', '.js', '.html', '.css', '.json'];
+const INCLUDE_EXTENSIONS = [
+  // JavaScript / TypeScript / Web Frameworks (React, Angular, Vue, etc.)
+  '.js', '.jsx', '.ts', '.tsx',
+  '.html', '.css', '.scss', '.sass', '.less',
+
+  // Config & Tooling for JS Ecosystem
+  '.json',        // package.json, tsconfig.json, etc.
+  '.babelrc',     // Babel config
+  '.eslintrc',    // ESLint config
+  '.prettierrc',  // Prettier config
+  '.env',         // Environment variables
+  '.nvmrc',       // Node version manager
+  '.npmrc',       // NPM config
+  '.yarnrc',      // Yarn config
+  '.lock',        // package-lock.json, yarn.lock, pnpm-lock.yaml
+
+  // Angular-specific
+  '.module.ts', '.component.ts', '.component.html', '.component.scss',
+
+  // Python
+  '.py',
+  '.ipynb',       // Jupyter notebook
+  'requirements.txt', 'Pipfile', 'pyproject.toml', 'setup.py',
+
+  // Java / Spring Boot
+  '.java', '.kt', '.xml', '.properties', '.yml', '.yaml',
+  'pom.xml', 'build.gradle', 'settings.gradle', 'application.yml',
+
+  // PHP
+  '.php', '.blade.php',
+  'composer.json', 'composer.lock',
+
+  // C# / .NET
+  '.cs', '.csproj', '.sln', '.config', '.resx', '.json',
+
+  // Dart / Flutter
+  '.dart',
+  'pubspec.yaml', 'analysis_options.yaml',
+
+  // Go
+  '.go',
+  'go.mod', 'go.sum',
+
+  // Ruby / Rails
+  '.rb', '.erb', '.rake', '.gemspec',
+  'Gemfile', 'Gemfile.lock',
+
+  // Vue
+  '.vue',
+
+  // Markdown / Docs
+  '.md', '.markdown',
+
+  // Docker & DevOps
+  'Dockerfile', 'docker-compose.yml',
+  '.dockerignore',
+  '.gitignore',
+
+  // CI/CD
+  '.yml', '.yaml',  // GitHub Actions, CircleCI, TravisCI
+  '.gitlab-ci.yml', 'Jenkinsfile',
+
+  // Misc / Project Files
+  '.sh', '.bat', '.cmd', '.ini',
+  '.editorconfig',
+  '.tsbuildinfo'
+];
+
 const EXCLUDE_PATTERNS = ['.spec.ts', 'node_modules', 'dist', 'package-lock.json'];
 
 // 📦 Step 1: Recursively get files
@@ -67,26 +135,38 @@ function buildPrompt(files, PROJECT_PATH) {
   return `
 You are an expert AI code reviewer.
 
-Analyze the following full project code and return an array of issues in JSON format.
-You can include bad coding standards, bugs, improvements, suggestions, vulnerabilities, suggested coding standards, bad technical designs, issues that break the application.
+Analyze the following full project code and return a JSON object with **two properties**: 
 
-📌 For each issue:
+1. **projectMetaData**:
+   - projectType: Type of project (e.g., "Full-stack Web App", "Frontend SPA", "Backend API", "Mobile App", etc.)
+   - technologiesUsed: List of technologies detected (e.g., Angular, React, Node.js, Express, MongoDB, Java, Spring Boot, etc.)
+   - probableProjectName: Infer a probable project name based on folder structure, filenames, or file content.
+   - projectPurpose: Short description (2–3 lines) about what the project likely does or is intended for, based on code and filenames.
+
+2. **codeAnalysis**: An array of code issues. You can include bad coding standards, bugs, improvements, suggestions, vulnerabilities, suggested coding standards, bad technical designs, or issues that may break the application.
+
+For each issue in codeAnalysis:
 - file: relative path to the file
+- issueName within 3-4 words
 - issue: brief summary of the issue (max 20 lines)
 - severity: Critical | High | Medium | Low
 - originalCode: a short code snippet with the issue 
 - suggestedFix: a corrected version of the code
-- explanation: clear and helpful explanation to average developer
- ignore empty lines in the code and your response 
+- explanation: clear and helpful explanation to an average developer
 
-Only return valid JSON. Do NOT wrap it in markdown. Do NOT output anything outside the JSON.
-donn't add single letter outsinde of data. also don't add things like starting  and ending 
+❗Important:
+- Ignore empty lines in the code and your response.
+- Only return **valid JSON**. Do NOT wrap it in markdown. Do NOT include any introductory or ending text.
+- Do NOT return anything other than the JSON.
+- Do NOT add any single letters or characters outside the JSON.
+- Your entire response must be a single valid JSON object with { projectMetaData, codeAnalysis }.
 
-📁 Project Tree:
+ Project Tree:
 ${tree}
 
-📄 Full Code:
+Full Code:
 ${codeSections}
+
 `.trim();
 }
 
@@ -123,6 +203,7 @@ async function sendToGemini(prompt) {
 
 async function fetchRepoFromGitHub(gitUrl, outputDir = 'uploads') {
   try {
+    console.log('heyeyyyy')
     const repoMatch = gitUrl.match(/github\.com\/(.+\/.+)\.git$/);
     if (!repoMatch) throw new Error('Invalid GitHub URL format');
 
