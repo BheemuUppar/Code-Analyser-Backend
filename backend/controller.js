@@ -1,86 +1,130 @@
-const fs = require('fs');
-const path = require('path');
-const axios = require('axios');
+const fs = require("fs");
+const path = require("path");
+const axios = require("axios");
 
-
-
-const AdmZip = require('adm-zip');
+const AdmZip = require("adm-zip");
 
 // 🔐 Your Gemini API Key
-const API_KEY = 'AIzaSyCYYSQb0PR56YJBXitW7FswXVwqYyqciMk'; // Replace with your actual key
+const API_KEY = "AIzaSyCYYSQb0PR56YJBXitW7FswXVwqYyqciMk"; // Replace with your actual key
 
 // 📁 Project Config
 // const PROJECT_PATH = 'C:/code/angular/my-app'; // Update as needed
 //const INCLUDE_EXTENSIONS = ['.ts', '.js', '.html', '.css', '.json'];
 const INCLUDE_EXTENSIONS = [
   // JavaScript / TypeScript / Web Frameworks (React, Angular, Vue, etc.)
-  '.js', '.jsx', '.ts', '.tsx',
-  '.html', '.css', '.scss', '.sass', '.less',
+  ".js",
+  ".jsx",
+  ".ts",
+  ".tsx",
+  ".html",
+  ".css",
+  ".scss",
+  ".sass",
+  ".less",
 
   // Config & Tooling for JS Ecosystem
-  '.json',        // package.json, tsconfig.json, etc.
-  '.babelrc',     // Babel config
-  '.eslintrc',    // ESLint config
-  '.prettierrc',  // Prettier config
-  '.env',         // Environment variables
-  '.nvmrc',       // Node version manager
-  '.npmrc',       // NPM config
-  '.yarnrc',      // Yarn config
-  '.lock',        // package-lock.json, yarn.lock, pnpm-lock.yaml
+  ".json", // package.json, tsconfig.json, etc.
+  ".babelrc", // Babel config
+  ".eslintrc", // ESLint config
+  ".prettierrc", // Prettier config
+  ".env", // Environment variables
+  ".nvmrc", // Node version manager
+  ".npmrc", // NPM config
+  ".yarnrc", // Yarn config
+  ".lock", // package-lock.json, yarn.lock, pnpm-lock.yaml
 
   // Angular-specific
-  '.module.ts', '.component.ts', '.component.html', '.component.scss',
+  ".module.ts",
+  ".component.ts",
+  ".component.html",
+  ".component.scss",
 
   // Python
-  '.py',
-  '.ipynb',       // Jupyter notebook
-  'requirements.txt', 'Pipfile', 'pyproject.toml', 'setup.py',
+  ".py",
+  ".ipynb", // Jupyter notebook
+  "requirements.txt",
+  "Pipfile",
+  "pyproject.toml",
+  "setup.py",
 
   // Java / Spring Boot
-  '.java', '.kt', '.xml', '.properties', '.yml', '.yaml',
-  'pom.xml', 'build.gradle', 'settings.gradle', 'application.yml',
+  ".java",
+  ".kt",
+  ".xml",
+  ".properties",
+  ".yml",
+  ".yaml",
+  "pom.xml",
+  "build.gradle",
+  "settings.gradle",
+  "application.yml",
 
   // PHP
-  '.php', '.blade.php',
-  'composer.json', 'composer.lock',
+  ".php",
+  ".blade.php",
+  "composer.json",
+  "composer.lock",
 
   // C# / .NET
-  '.cs', '.csproj', '.sln', '.config', '.resx', '.json',
+  ".cs",
+  ".csproj",
+  ".sln",
+  ".config",
+  ".resx",
+  ".json",
 
   // Dart / Flutter
-  '.dart',
-  'pubspec.yaml', 'analysis_options.yaml',
+  ".dart",
+  "pubspec.yaml",
+  "analysis_options.yaml",
 
   // Go
-  '.go',
-  'go.mod', 'go.sum',
+  ".go",
+  "go.mod",
+  "go.sum",
 
   // Ruby / Rails
-  '.rb', '.erb', '.rake', '.gemspec',
-  'Gemfile', 'Gemfile.lock',
+  ".rb",
+  ".erb",
+  ".rake",
+  ".gemspec",
+  "Gemfile",
+  "Gemfile.lock",
 
   // Vue
-  '.vue',
+  ".vue",
 
   // Markdown / Docs
-  '.md', '.markdown',
+  ".md",
+  ".markdown",
 
   // Docker & DevOps
-  'Dockerfile', 'docker-compose.yml',
-  '.dockerignore',
-  '.gitignore',
+  "Dockerfile",
+  "docker-compose.yml",
+  ".dockerignore",
+  ".gitignore",
 
   // CI/CD
-  '.yml', '.yaml',  // GitHub Actions, CircleCI, TravisCI
-  '.gitlab-ci.yml', 'Jenkinsfile',
+  ".yml",
+  ".yaml", // GitHub Actions, CircleCI, TravisCI
+  ".gitlab-ci.yml",
+  "Jenkinsfile",
 
   // Misc / Project Files
-  '.sh', '.bat', '.cmd', '.ini',
-  '.editorconfig',
-  '.tsbuildinfo'
+  ".sh",
+  ".bat",
+  ".cmd",
+  ".ini",
+  ".editorconfig",
+  ".tsbuildinfo",
 ];
 
-const EXCLUDE_PATTERNS = ['.spec.ts', 'node_modules', 'dist', 'package-lock.json'];
+const EXCLUDE_PATTERNS = [
+  ".spec.ts",
+  "node_modules",
+  "dist",
+  "package-lock.json",
+];
 
 // 📦 Step 1: Recursively get files
 function readDirAsync(dir) {
@@ -94,7 +138,7 @@ function readDirAsync(dir) {
 
 function readFileAsync(filePath) {
   return new Promise((resolve, reject) => {
-    fs.readFile(filePath, 'utf-8', (err, data) => {
+    fs.readFile(filePath, "utf-8", (err, data) => {
       if (err) return reject(err);
       resolve(data);
     });
@@ -102,13 +146,13 @@ function readFileAsync(filePath) {
 }
 
 async function getFiles(dir) {
-  console.log('DIR ', dir);
+  console.log("DIR ", dir);
   let results = [];
   const entries = await readDirAsync(dir);
 
   for (const entry of entries) {
     const fullPath = path.join(dir, entry.name);
-    if (EXCLUDE_PATTERNS.some(p => fullPath.includes(p))) continue;
+    if (EXCLUDE_PATTERNS.some((p) => fullPath.includes(p))) continue;
 
     if (entry.isDirectory()) {
       const nested = await getFiles(fullPath);
@@ -126,89 +170,120 @@ async function getFiles(dir) {
 }
 // 🧠 Step 2: Format full project context
 function buildPrompt(files, PROJECT_PATH) {
-  const tree = files.map(f => `- ${path.relative(PROJECT_PATH, f.path)}`).join('\n');
-  console.log(tree)
+  const tree = files
+    .map((f) => `- ${path.relative(PROJECT_PATH, f.path)}`)
+    .join("\n");
+  console.log(tree);
   const codeSections = files
-    .map(f => `// File: ${path.relative(PROJECT_PATH, f.path)}\n${f.content}`)
-    .join('\n\n');
+    .map((f) => `// File: ${path.relative(PROJECT_PATH, f.path)}\n${f.content}`)
+    .join("\n\n");
 
-  return `
-You are an expert AI code reviewer.
+  return `You are an expert AI code reviewer.
 
-Analyze the following full project code and return a JSON object with **two properties**: 
+Analyze the entire project source code and return a single valid JSON object with two top-level properties:
 
-1. **projectMetaData**:
-   - projectType: Type of project (e.g., "Full-stack Web App", "Frontend SPA", "Backend API", "Mobile App", etc.)
-   - technologiesUsed: List of technologies detected (e.g., Angular, React, Node.js, Express, MongoDB, Java, Spring Boot, etc.)
-   - probableProjectName: Infer a probable project name based on folder structure, filenames, or file content.
-   - projectPurpose: Short description (2–3 lines) about what the project likely does or is intended for, based on code and filenames.
+---
 
-2. **codeAnalysis**: An array of code issues. You can include bad coding standards, bugs, improvements, suggestions, vulnerabilities, suggested coding standards, bad technical designs, or issues that may break the application.
+1. "projectMetaData":
+- "projectType": Type of project (e.g., "Full-stack Web App", "Frontend SPA", "Backend API", "Mobile App", etc.)
+- "technologiesUsed": List of detected technologies and frameworks
+- "probableProjectName": Inferred project name from code or file structure
+- "projectPurpose": Brief description (2–3 lines) of what the project does
 
-For each issue in codeAnalysis:
-- file: relative path to the file
-- issueName within 3-4 words
-- issue: brief summary of the issue (max 20 lines)
-- severity: Critical | High | Medium | Low
-- originalCode: a short code snippet with the issue 
-- suggestedFix: a corrected version of the code
-- explanation: clear and helpful explanation to an average developer
+---
 
-❗Important:
-- Ignore empty lines in the code and your response.
-- Only return **valid JSON**. Do NOT wrap it in markdown. Do NOT include any introductory or ending text.
-- Do NOT return anything other than the JSON.
-- Do NOT add any single letters or characters outside the JSON.
-- Your entire response must be a single valid JSON object with { projectMetaData, codeAnalysis }.
+2. "codeAnalysis": A **comprehensive array of issues** found in the codebase.  
+Do **NOT limit the number of issues**. Include **as many as possible** — especially:
+- **Critical**, **High**, and **Medium** severity issues
+- Performance, security, architecture, maintainability, bad patterns, technical debt, scalability, and race conditions
 
- Project Tree:
+Each item in "codeAnalysis" must include:
+- "file": Relative file path where the issue is found
+- "issueName": Short 3–5 word title
+- "issue": Short explanation of the issue (max 15 lines)
+- "severity": One of "Critical", "High", "Medium", or "Low"
+- "originalCode": Code snippet containing the issue
+- "suggestedFix": Revised or corrected code snippet
+- "explanation": Clear reasoning that helps a mid-level developer understand the fix
+
+---
+
+Strict Output Rules:
+- ✅ Output must be a **single valid JSON object** with keys: "projectMetaData" and "codeAnalysis"
+- ❌ Do **NOT** wrap output in json or triple backticks
+- ❌ Do **NOT** add comments, formatting, or extra text
+- ✅ All keys and values must use proper **double-quoted JSON syntax**
+- ✅ Include **all issues you can detect** — do not shorten the output for brevity
+
+---
+
+📁 Project Tree:
 ${tree}
 
-Full Code:
+📄 Full Code:
 ${codeSections}
 
-`.trim();
+`
 }
 
 async function sendToGemini(prompt) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
+const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
   try {
-    const response = await axios.post(url, {
-      contents: [
-        {
-          parts: [{ text: prompt }]
-        }
-      ]
-    }, {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    const response = await axios.post(
+      url,
+      {
+        contents: [
+          {
+            parts: [{ text: prompt }],
+          },
+        ],
+        generationConfig: {
+          temperature: 0, // This tells the model to be deterministic and always return the most likely response (i.e., fewer creative variations).
+          topK: 1,
+          topP: 1,
+        },
+      },
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
 
     const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (text) {
-      console.log('\n✅ AI Response:\n');
-      const cleanedJson = text.replace(/^```json\s*/, '').replace(/```$/, '').trim();
-     
-      return cleanedJson
+      console.log("\n✅ AI Response:\n");
+      const cleanedJson = text
+        .replace(/```json\s*/g, '')  // Remove ```json with any spacing/newlines
+  .replace(/```/g, '')         // Remove trailing ```
+  .trim();
+
+        const parsed = JSON.parse(cleanedJson);
+      return parsed;
     } else {
-      console.error('❌ Unexpected API response:', JSON.stringify(response.data, null, 2));
-    //   throw Error('❌ Unexpected API response:')
+      console.error(
+        "❌ Unexpected API response:",
+        JSON.stringify(response.data, null, 2)
+      );
+      //   throw Error('❌ Unexpected API response:')
     }
   } catch (error) {
-    console.error('❌ Gemini API Error:', error.response?.data || error.message);
-     throw Error('❌ Gemini API Error:'+ error.response?.data || error.message)
+    console.error(
+      "❌ Gemini API Error:",
+      error.response?.data || error.message
+    );
+    throw Error("❌ Gemini API Error:" + error.response?.data || error.message);
   }
 }
 
-async function fetchRepoFromGitHub(gitUrl, outputDir = 'uploads') {
+async function fetchRepoFromGitHub(gitUrl, outputDir = "uploads") {
   try {
-    console.log('heyeyyyy')
+    console.log("heyeyyyy");
     const repoMatch = gitUrl.match(/github\.com\/(.+\/.+)\.git$/);
-    if (!repoMatch) throw new Error('Invalid GitHub URL format');
+    if (!repoMatch) throw new Error("Invalid GitHub URL format");
 
     const repo = repoMatch[1]; // e.g., "user/repo"
-    const repoName = repo.split('/')[1];
+    const repoName = repo.split("/")[1];
     const apiUrl = `https://api.github.com/repos/${repo}`;
 
     // Get default branch (e.g., main or master)
@@ -225,24 +300,24 @@ async function fetchRepoFromGitHub(gitUrl, outputDir = 'uploads') {
     }
 
     // Download ZIP and write it to file
-    const zipRes = await axios.get(zipUrl, { responseType: 'arraybuffer' });
+    const zipRes = await axios.get(zipUrl, { responseType: "arraybuffer" });
     const zipFileName = `${repoName}.zip`;
     const tempZipPath = path.join(outputPath, zipFileName);
     fs.writeFileSync(tempZipPath, zipRes.data);
 
     // Return relative path
     const relativeZipPath = path.join(outputDir, zipFileName);
-    console.log('ZIP downloaded:', relativeZipPath);
+    console.log("ZIP downloaded:", relativeZipPath);
     return relativeZipPath;
   } catch (error) {
-    console.error('Failed to fetch GitHub repo:', error.message);
+    console.error("Failed to fetch GitHub repo:", error.message);
     throw error;
   }
 }
 
 function extractZipToOriginal(zipPath) {
   const folderName = path.basename(zipPath, path.extname(zipPath)); // removes .zip
-  const extractTo = path.join(path.dirname(zipPath), folderName);   // same dir as zip
+  const extractTo = path.join(path.dirname(zipPath), folderName); // same dir as zip
 
   if (!fs.existsSync(extractTo)) {
     fs.mkdirSync(extractTo, { recursive: true });
@@ -255,5 +330,10 @@ function extractZipToOriginal(zipPath) {
   return extractTo; // Return path for further processing
 }
 
-
-module.exports = {  getFiles, buildPrompt , sendToGemini, fetchRepoFromGitHub, extractZipToOriginal}
+module.exports = {
+  getFiles,
+  buildPrompt,
+  sendToGemini,
+  fetchRepoFromGitHub,
+  extractZipToOriginal,
+};

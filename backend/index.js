@@ -75,10 +75,12 @@ try {
    let response =  await sendToGemini(prompt);
 
    console.log('Response sent');
-    res.send(response)
+    res.status(200).send(response)
         
 } catch (error) {
-    console.log(error)
+    console.log(error.error.message || "Unknown Error");
+     res.status(error.error.code).send(error.error.message || "Unknown Error")
+
 }
 })
 
