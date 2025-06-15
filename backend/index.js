@@ -33,7 +33,7 @@ app.get('/', (req, res)=>{
 // for zipfile upload 
 app.post('/analysCode/zipFile', upload.single('zipFile'), async (req, res)=>{
     try {
-        if (!req.file) return res.status(400).send('No file uploaded');
+    if (!req.file) return res.status(400).send('No file uploaded');
 
     const zipPath = req.file.path;
 
