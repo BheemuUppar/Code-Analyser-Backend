@@ -7,16 +7,16 @@ const { v4: uuidv4 } = require("uuid");
 // import { v4 as uuidv4 } from 'uuid';
 
 const multer = require("multer");
-const { tracker } = require("./utils");
+const { tracker } = require("./src/utils");
 const http = require("http");
 
 const server = http.createServer(app);
-const { initSocket } = require("./socket"); // <-- Import socket initializer
+const { initSocket } = require("./src/socket"); // <-- Import socket initializer
 initSocket(server); // <-- Initialize socket.io with the HTTP server
 
 const {
   fetchRepoFromGitHub,
-} = require("./controller");
+} = require("./src/controller");
 
 // Multer setup: Store file in memory
 // Custom storage to keep original filename
@@ -36,6 +36,7 @@ app.use(express.json());
 app.use((err, req, res, next) => {
   if (err) {
     console.log(err);
+    res.status(500).json({message:"Something went wrong"})
   }
 });
 
