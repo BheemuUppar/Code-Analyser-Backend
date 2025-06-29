@@ -1,35 +1,26 @@
 const express = require("express");
 const cors = require("cors");
 const app = express();
-const fs = require("fs");
+
 require("dotenv").config();
 const { v4: uuidv4 } = require("uuid");
 // import { v4 as uuidv4 } from 'uuid';
 
-const multer = require("multer");
+
 const { tracker } = require("./src/utils");
 const http = require("http");
 
 const server = http.createServer(app);
 const { initSocket } = require("./src/socket"); // <-- Import socket initializer
 initSocket(server); // <-- Initialize socket.io with the HTTP server
-
+const upload = require('./src/multer')
 const {
   fetchRepoFromGitHub,
 } = require("./src/controller");
 
 // Multer setup: Store file in memory
 // Custom storage to keep original filename
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/"); // ensure this folder exists
-  },
-  filename: function (req, file, cb) {
-    cb(null, file.originalname); // this preserves the original file name
-  },
-});
 
-const upload = multer({ storage });
 
 app.use(cors());
 app.use(express.json());
