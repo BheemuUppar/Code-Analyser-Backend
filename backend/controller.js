@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const axios = require("axios");
-
+require("dotenv").config();
 const AdmZip = require("adm-zip");
 const {INCLUDE_EXTENSIONS, EXCLUDE_PATTERNS} = require('./configuration')
 
@@ -98,6 +98,7 @@ Strict Output Rules:
 - ❌ Do **NOT** wrap output in json or triple backticks
 - ❌ Do **NOT** add comments, formatting, or extra text
 - ✅ All keys and values must use proper **double-quoted JSON syntax**
+- a cleand json you make it like this JSON.stringfy({projectMetaData:project data,codeAnalysis :data })
 - ✅ Include **all issues you can detect** — do not shorten the output for brevity
 
 ---
@@ -111,7 +112,10 @@ ${codeSections}
 }
 
 async function sendToGemini(prompt) {
-const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+ 
+// const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY.trim()}`;
+
 
   try {
     const response = await axios.post(
@@ -151,6 +155,7 @@ const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-
       );
       //   throw Error('❌ Unexpected API response:')
     }
+
   } catch (error) {
     console.error(
       "❌ Gemini API Error:",

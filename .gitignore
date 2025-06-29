@@ -37,6 +37,7 @@ coverage/
 
 # Backend
 /backend/node_modules/
+/backend/uploads/
 /backend/dist/
 /backend/.env
 

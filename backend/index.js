@@ -1,117 +1,87 @@
-
-const express = require('express')
-const cors = require('cors')
+const express = require("express");
+const cors = require("cors");
 const app = express();
-const fs = require('fs')
-require('dotenv').config();
+const fs = require("fs");
+require("dotenv").config();
+const { v4: uuidv4 } = require("uuid");
+// import { v4 as uuidv4 } from 'uuid';
 
-const multer = require('multer');
+const multer = require("multer");
+const { tracker } = require("./utils");
+const http = require("http");
 
+const server = http.createServer(app);
+const { initSocket } = require("./socket"); // <-- Import socket initializer
+initSocket(server); // <-- Initialize socket.io with the HTTP server
 
-const {getFiles, buildPrompt , sendToGemini , extractZipToOriginal,fetchRepoFromGitHub} = require('./controller')
+const {
+  fetchRepoFromGitHub,
+} = require("./controller");
 
 // Multer setup: Store file in memory
 // Custom storage to keep original filename
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'uploads/'); // ensure this folder exists
+    cb(null, "uploads/"); // ensure this folder exists
   },
   filename: function (req, file, cb) {
     cb(null, file.originalname); // this preserves the original file name
-  }
+  },
 });
 
 const upload = multer({ storage });
 
-
-app.use(cors())
-app.use(express.json())
-app.get('/', (req, res)=>{
-    res.status(200).send("Server is up")
+app.use(cors());
+app.use(express.json());
+app.use((err, req, res, next) => {
+  if (err) {
+    console.log(err);
+  }
 });
 
-// for zipfile upload 
-app.post('/analysCode/zipFile', upload.single('zipFile'), async (req, res)=>{
-    try {
-    if (!req.file) return res.status(400).send('No file uploaded');
+app.get("/", (req, res) => {
+  res.status(200).send("Server is up");
+});
 
-    const zipPath = req.file.path;
+// for zipfile upload
+app.post("/analysCode/zipFile", upload.single("zipFile"), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).send("No file uploaded");
 
-    // Step 1: Extract to original path
-    const extractTo = extractZipToOriginal(zipPath);
-    console.log('extract path ', extractTo)
-    // Step 2: Run file scanning logic
-    const files = await getFiles(extractTo);
-    console.log(`✅ Found ${files.length} relevant files.`);
-
-    const prompt = buildPrompt(files, extractTo);
-    console.log('\n🤖 Sending project to Gemini...');
-   let response =  await sendToGemini(prompt);
-
-    res.send(response)
-        
-
-    } catch (error) {
-        console.log(error)
-    }
-})
+    let jobId = uuidv4();
+    tracker[jobId] = {
+      status: "Uploading File",
+      path: req.file.path,
+    };
+    console.log("JOB ID SENT : ", jobId)
+    res.status(201).json({ id: jobId });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send("Something went wrong");
+  }
+});
 
 // for github link
-app.post('/analysCode/remoteRepo', async (req, res)=>{
-try {
-   let zipPath = await  fetchRepoFromGitHub(req.body.url);
-   console.log(zipPath)
-   // Step 1: Extract to original path
-    const extractTo = extractZipToOriginal(zipPath);
-    fs.unlinkSync(zipPath)
-    console.log('extract path ', extractTo)
-    // Step 2: Run file scanning logic
-    const files = await getFiles(extractTo);
-    console.log(`✅ Found ${files.length} relevant files.`);
+app.post("/analysCode/remoteRepo", async (req, res) => {
+  try {
+    let jobId = uuidv4();
+    tracker[jobId] = {
+      status: "Fetching from Github",
+      path: "",
+    };
+    let zipPath = await fetchRepoFromGitHub(req.body.url);
 
-    const prompt = buildPrompt(files, extractTo);
-    fs.rmSync(extractTo, {recursive: true } )
-    console.log('\n🤖 Sending project to Gemini...');
-   let response =  await sendToGemini(prompt);
-
-   console.log('Response sent');
-    res.status(200).send(response)
-        
-} catch (error) {
+    tracker[jobId]["status"] = "code fetch successfully";
+    tracker[jobId]["path"] = zipPath;
+    console.log("JOB ID SENT : ", jobId);
+    res.status(201).json({ id: jobId });
+  } catch (error) {
     console.log(error.error.message || "Unknown Error");
-     res.status(error.error.code).send(error.error.message || "Unknown Error")
+    res.status(error.error.code).send(error.error.message || "Unknown Error");
+  }
+});
 
-}
-})
-
-
-
-app.use((err, req, res, next)=>{
-   if(err){
-    console.log(err)
-   }
-})
-
-
-
-
-
-
-const PORT = process.env.PORT || 3000
-app.listen(PORT, ()=>{
-    console.log("Server Started at Port ",PORT )
-})
-
-
-// const INCLUDE_EXTENSIONS = [
-//   '.js', '.ts', '.html', '.css', '.scss',       // Web/Angular/React
-//   '.py',                                         // Python
-//   '.java', '.xml',                               // Java/Spring Boot
-//   '.php',                                        // PHP
-//   '.cs',                                         // C# / .NET
-//   '.dart',                                       // Flutter
-//   '.go',                                         // Go
-//   '.rb',                                         // Ruby
-//   '.vue',                                        // Vue
-//   '.json', '.md',                                // Misc
-// ];
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log("Server Started at Port ", PORT);
+});
