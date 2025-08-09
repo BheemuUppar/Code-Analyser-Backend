@@ -31,7 +31,7 @@ function readFileAsync(filePath) {
 }
 
 async function getFiles(dir) {
-  console.log("DIR ", dir);
+  // console.log("DIR ", dir);
   let results = [];
   const entries = await readDirAsync(dir);
 
@@ -58,7 +58,7 @@ function buildPrompt(files, PROJECT_PATH) {
   const tree = files
     .map((f) => `- ${path.relative(PROJECT_PATH, f.path)}`)
     .join("\n");
-  console.log(tree);
+  // console.log(tree);
   const codeSections = files
     .map((f) => `// File: ${path.relative(PROJECT_PATH, f.path)}\n${f.content}`)
     .join("\n\n");
@@ -154,11 +154,11 @@ async function sendToGemini(prompt) {
       parsed = JSON.parse(cleanedJson);
     } catch (parseError) {
       console.error("❌ Failed to parse JSON from AI:", parseError.message);
-      console.log("Raw cleaned output:", text);
+      // console.log("Raw cleaned output:", text);
       throw new Error("Invalid JSON output from AI");
     }
 
-    console.log("After clean:", parsed);
+    // console.log("After clean:", parsed);
     return parsed;
   } catch (error) {
     console.error(
@@ -174,8 +174,8 @@ async function fetchRepoFromGitHub(gitUrl, outputDir = "uploads") {
     
     const repoMatch = gitUrl.match(/github\.com\/(.+\/.+)\.git$/);
     if (!repoMatch) throw new Error("Invalid GitHub URL format");
-  console.log("git url : ", gitUrl);
-  console.log("repo match : ", gitUrl)
+  // console.log("git url : ", gitUrl);
+  // console.log("repo match : ", gitUrl)
     const repo = repoMatch[1]; // e.g., "user/repo"
     const repoName = repo.split("/")[1];
     const apiUrl = `https://api.github.com/repos/${repo}`;
@@ -197,7 +197,7 @@ async function fetchRepoFromGitHub(gitUrl, outputDir = "uploads") {
 
     // Download ZIP and write it to file
     const zipRes = await axios.get(zipUrl, { responseType: "arraybuffer" });
-    console.log('headers : ', zipRes.headers["content-type"])
+    // console.log('headers : ', zipRes.headers["content-type"])
     const zipFileName = `${repoName}.zip`;
     const tempZipPath = path.join(outputPath, zipFileName);
     console.log(tempZipPath)
@@ -205,7 +205,7 @@ async function fetchRepoFromGitHub(gitUrl, outputDir = "uploads") {
 
     // Return relative path
     const relativeZipPath = path.join(outputDir, zipFileName);
-    console.log("ZIP downloaded:", relativeZipPath);
+    // console.log("ZIP downloaded:", relativeZipPath);
     return relativeZipPath;
   } catch (error) {
     console.error("Failed to fetch GitHub repo:", error);

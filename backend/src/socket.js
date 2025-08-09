@@ -32,7 +32,7 @@ function initSocket(server) {
     });
 
     socket.on("message", (data) => {
-      console.log("Message from client:", data);
+      // console.log("Message from client:", data);
       socket.emit("message", `Echo: ${data}`);
     });
 
