@@ -110,61 +110,42 @@ ${tree}
 ${codeSections}
 `
 }
+// import { GoogleGenerativeAI } from "@google/generative-ai";
+const GoogleGenerativeAI = require("@google/generative-ai").GoogleGenerativeAI;
 
+const genAI = new GoogleGenerativeAI(API_KEY.trim());
 
 async function sendToGemini(prompt) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY.trim()}`;
-
   try {
-    const response = await axios.post(
-      url,
-      {
-        contents: [
-          {
-            parts: [{ text: prompt }],
-          },
-        ],
-        generationConfig: {
-          temperature: 0, // Deterministic response
-          topK: 1,
-          topP: 1,
-        },
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash",
+      generationConfig: {
+        temperature: 0,
+        topK: 1,
+        topP: 1,
       },
-      {
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+    });
 
-    const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
 
-    if (!text) {
-      throw new Error(
-        "Unexpected API response: " + JSON.stringify(response.data, null, 2)
-      );
-    }
-
-    // Remove code block markers and trim
+    // Remove code block markers
     const cleanedJson = text
       .replace(/```json\s*/gi, "")
       .replace(/```/g, "")
       .trim();
+
     let parsed;
     try {
       parsed = JSON.parse(cleanedJson);
-    } catch (parseError) {
-      console.error("❌ Failed to parse JSON from AI:", parseError.message);
-      // console.log("Raw cleaned output:", text);
+    } catch (err) {
+      console.error("❌ Failed to parse JSON:", err.message);
       throw new Error("Invalid JSON output from AI");
     }
 
-    // console.log("After clean:", parsed);
     return parsed;
   } catch (error) {
-    console.error(
-      "❌ Gemini API Error:",
-      error.response?.data || error.message
-    );
+    console.error("❌ Gemini SDK Error:", error.message);
     throw error;
   }
 }
