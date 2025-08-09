@@ -100,7 +100,7 @@ Strict Output Rules:
 - ✅ All keys and values must use proper **double-quoted JSON syntax**
 - a cleand json you make it like this JSON.stringfy({projectMetaData:project data,codeAnalysis :data })
 - ✅ Include **all issues you can detect** — do not shorten the output for brevity
-
+-- don't send incomplete response, try to make it valid json
 ---
 
 📁 Project Tree:
@@ -111,11 +111,9 @@ ${codeSections}
 `
 }
 
-async function sendToGemini(prompt) {
- 
-// const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
-const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY.trim()}`;
 
+async function sendToGemini(prompt) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY.trim()}`;
 
   try {
     const response = await axios.post(
@@ -127,7 +125,7 @@ const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-
           },
         ],
         generationConfig: {
-          temperature: 0, // This tells the model to be deterministic and always return the most likely response (i.e., fewer creative variations).
+          temperature: 0, // Deterministic response
           topK: 1,
           topP: 1,
         },
@@ -138,39 +136,46 @@ const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-
     );
 
     const text = response.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    
 
-    if (text) {
-      console.log("\n✅ AI Response:\n");
-      const cleanedJson = text
-        .replace(/```json\s*/g, '')  // Remove ```json with any spacing/newlines
-  .replace(/```/g, '')         // Remove trailing ```
-  .trim();
-
-        const parsed = JSON.parse(cleanedJson);
-      return parsed;
-    } else {
-      console.error(
-        "❌ Unexpected API response:",
-        JSON.stringify(response.data, null, 2)
+    if (!text) {
+      throw new Error(
+        "Unexpected API response: " + JSON.stringify(response.data, null, 2)
       );
-      //   throw Error('❌ Unexpected API response:')
     }
 
+    // Remove code block markers and trim
+    const cleanedJson = text
+      .replace(/```json\s*/gi, "")
+      .replace(/```/g, "")
+      .trim();
+    let parsed;
+    try {
+      parsed = JSON.parse(cleanedJson);
+    } catch (parseError) {
+      console.error("❌ Failed to parse JSON from AI:", parseError.message);
+      console.log("Raw cleaned output:", text);
+      throw new Error("Invalid JSON output from AI");
+    }
+
+    console.log("After clean:", parsed);
+    return parsed;
   } catch (error) {
     console.error(
       "❌ Gemini API Error:",
       error.response?.data || error.message
     );
-    throw Error("❌ Gemini API Error:" + error.response?.data || error.message);
+    throw error;
   }
 }
 
 async function fetchRepoFromGitHub(gitUrl, outputDir = "uploads") {
   try {
-    console.log("heyeyyyy");
+    
     const repoMatch = gitUrl.match(/github\.com\/(.+\/.+)\.git$/);
     if (!repoMatch) throw new Error("Invalid GitHub URL format");
-
+  console.log("git url : ", gitUrl);
+  console.log("repo match : ", gitUrl)
     const repo = repoMatch[1]; // e.g., "user/repo"
     const repoName = repo.split("/")[1];
     const apiUrl = `https://api.github.com/repos/${repo}`;
@@ -184,14 +189,18 @@ async function fetchRepoFromGitHub(gitUrl, outputDir = "uploads") {
 
     // Ensure output directory exists
     const outputPath = path.join(__dirname, outputDir);
+    console.log("Resolved output path:", outputPath);
+
     if (!fs.existsSync(outputPath)) {
       fs.mkdirSync(outputPath, { recursive: true });
     }
 
     // Download ZIP and write it to file
     const zipRes = await axios.get(zipUrl, { responseType: "arraybuffer" });
+    console.log('headers : ', zipRes.headers["content-type"])
     const zipFileName = `${repoName}.zip`;
     const tempZipPath = path.join(outputPath, zipFileName);
+    console.log(tempZipPath)
     fs.writeFileSync(tempZipPath, zipRes.data);
 
     // Return relative path
@@ -199,12 +208,13 @@ async function fetchRepoFromGitHub(gitUrl, outputDir = "uploads") {
     console.log("ZIP downloaded:", relativeZipPath);
     return relativeZipPath;
   } catch (error) {
-    console.error("Failed to fetch GitHub repo:", error.message);
+    console.error("Failed to fetch GitHub repo:", error);
     throw error;
   }
 }
 
 function extractZipToOriginal(zipPath) {
+  
   const folderName = path.basename(zipPath, path.extname(zipPath)); // removes .zip
   const extractTo = path.join(path.dirname(zipPath), folderName); // same dir as zip
 

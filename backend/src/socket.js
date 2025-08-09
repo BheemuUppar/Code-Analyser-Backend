@@ -64,9 +64,9 @@ async function jobHandler(jobId) {
     return 
   }
   // unzip
-  
-   updateStatus(jobId , "Unzipping file")
-  const extractTo = extractZipToOriginal(tracker[jobId].path);
+   updateStatus(jobId , "Preparing your files...");
+   console.log('path : ', tracker[jobId].path)
+   const extractTo = extractZipToOriginal(tracker[jobId].path);
 
   // tracker[jobId].status =  "Deleting Zip file"
   //  io.to(tracker[jobId].socketId).emit('status-update', {status : tracker[jobId].status });
@@ -76,26 +76,29 @@ async function jobHandler(jobId) {
   console.log("ZIP DELETED")
 
   //know which files to scan;
-   updateStatus(jobId , "Scanning Files")
+  await delay(2000);
+   updateStatus(jobId , "Scanning project contents...")
   const files = await getFiles(extractTo);
 
   console.log(`✅ Found ${files.length} relevant files.`);
-
-  updateStatus(jobId , "Analysing Files")
+  await delay(2000);
+  updateStatus(jobId , "Analyzing files for insights...")
   // build prompt
   const prompt = buildPrompt(files, extractTo);
   console.log("\n🤖 Sending project to Gemini...");
 
    fs.rmSync(extractTo, {recursive: true } );
    console.log("SOURCE CODE DELETED")
-
-   tracker[jobId].status =  "Working with AI"
-   updateStatus(jobId , "Working With AI")
+    await delay(2000);
+   tracker[jobId].status =  "Processing with AI..."
+   updateStatus(jobId , "Processing with AI...")
   // ask gemini
   let response = await sendToGemini(prompt);
   // send completion event
-  updateStatus(jobId , "Work Complete");
-
+  await delay(2000);
+  updateStatus(jobId , "Analysis complete");
+  
+  await delay(2000);
   io.to(tracker[jobId].socketId).emit('completed', {data:response});
 
   delete  tracker[jobId];
@@ -103,12 +106,15 @@ async function jobHandler(jobId) {
   // res.send(response)
 }
 
-function updateStatus(jobId, status="processing"){
- setTimeout(()=>{
-  if(tracker[jobId]){
-    tracker[jobId]['status'] =  status 
-     io.to(tracker[jobId].socketId).emit('status-update', {status : tracker[jobId].status });
-  }
- }, 2000)
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
+function updateStatus(jobId, status = "processing") {
+    console.log("setTimeout triggered at", Date.now());
+    if (tracker[jobId]) {
+      tracker[jobId].status = status;
+      io.to(tracker[jobId].socketId).emit("status-update", { status: tracker[jobId].status });
+    }
+}
+
 module.exports = { initSocket, getIO, getSocketIdForJob };
