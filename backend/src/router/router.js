@@ -38,7 +38,7 @@ router.post("/analysCode/remoteRepo", async (req, res) => {
       status: "Fetching from Github",
       path: "",
     };
-    let zipPath = await fetchRepoFromGitHub(req.body.url);
+    let zipPath = await fetchRepoFromGitHub(req.body.url,);
     console.log('after download ', zipPath)
     tracker[jobId]["status"] = "code fetch successfully";
     tracker[jobId]["path"] = zipPath;

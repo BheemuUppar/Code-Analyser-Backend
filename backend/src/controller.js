@@ -155,8 +155,8 @@ async function fetchRepoFromGitHub(gitUrl, outputDir = "uploads") {
     
     const repoMatch = gitUrl.match(/github\.com\/(.+\/.+)\.git$/);
     if (!repoMatch) throw new Error("Invalid GitHub URL format");
-  // console.log("git url : ", gitUrl);
-  // console.log("repo match : ", gitUrl)
+    console.log("git url : ", gitUrl);
+    console.log("repo match : ", gitUrl)
     const repo = repoMatch[1]; // e.g., "user/repo"
     const repoName = repo.split("/")[1];
     const apiUrl = `https://api.github.com/repos/${repo}`;
@@ -169,7 +169,7 @@ async function fetchRepoFromGitHub(gitUrl, outputDir = "uploads") {
     const zipUrl = `https://github.com/${repo}/archive/refs/heads/${branch}.zip`;
 
     // Ensure output directory exists
-    const outputPath = path.join(__dirname, outputDir);
+    const outputPath = path.join(__dirname, "..", outputDir);
     console.log("Resolved output path:", outputPath);
 
     if (!fs.existsSync(outputPath)) {
