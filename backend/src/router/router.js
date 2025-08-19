@@ -22,7 +22,7 @@ router.post("/analysCode/zipFile", upload.single("zipFile"), async (req, res) =>
       status: "Uploading File",
       path: req.file.path,
     };
-    console.log("JOB ID SENT : ", jobId)
+    console.log("JOB ID SENT : ", req.file.path);
     res.status(201).json({ id: jobId });
   } catch (error) {
     console.log(error);

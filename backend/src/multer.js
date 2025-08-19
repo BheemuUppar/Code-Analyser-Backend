@@ -1,14 +1,20 @@
 const multer = require("multer");
 const fs = require("fs");
+const path = require("path");
 
-// Multer setup: Store file in memory
-// Custom storage to keep original filename
+const uploadDir = path.join(__dirname, "uploads");
+
+// Ensure folder exists
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "uploads/"); // ensure this folder exists
+    cb(null, uploadDir);  // absolute path safer than "uploads/"
   },
   filename: function (req, file, cb) {
-    cb(null, file.originalname); // this preserves the original file name
+    cb(null, file.originalname);
   },
 });
 
