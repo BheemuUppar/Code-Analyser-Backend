@@ -3,7 +3,7 @@ const path = require("path");
 const axios = require("axios");
 require("dotenv").config();
 const AdmZip = require("adm-zip");
-const {INCLUDE_EXTENSIONS, EXCLUDE_PATTERNS} = require('./configuration')
+const {INCLUDE_EXTENSIONS, EXCLUDE_PATTERNS} = require('./configuration');
 
 // 🔐 Your Gemini API Key
 const API_KEY = process.env.geminiApiKey; // Replace with your actual key
@@ -65,9 +65,7 @@ function buildPrompt(files, PROJECT_PATH) {
 
   return `You are an expert AI code reviewer.
 
-Analyze the entire project source code and return a single valid JSON object with two top-level properties:
-
----
+Analyze the project source code and return a single valid JSON object with exactly two top-level properties:
 
 1. "projectMetaData":
 - "projectType": Type of project (e.g., "Full-stack Web App", "Frontend SPA", "Backend API", "Mobile App", etc.)
@@ -75,32 +73,26 @@ Analyze the entire project source code and return a single valid JSON object wit
 - "probableProjectName": Inferred project name from code or file structure
 - "projectPurpose": Brief description (2–3 lines) of what the project does
 
----
-
-2. "codeAnalysis": A **comprehensive array of issues** found in the codebase.  
-Do **NOT limit the number of issues**. Include **as many as possible** — especially:
-- **Critical**, **High**, and **Medium** severity issues
-- Performance, security, architecture, maintainability, bad patterns, technical debt, scalability, and race conditions
-
-Each item in "codeAnalysis" must include:
-- "file": Relative file path where the issue is found
+2. "codeAnalysis": An array of detected issues in the codebase.  
+Each item must include:
+- "file": Relative file path
 - "issueName": Short 3–5 word title
-- "issue": Short explanation of the issue (max 15 lines)
-- "severity": One of "Critical", "High", "Medium", or "Low"
+- "issue": Short explanation of the issue (max 10 lines)
+- "severity": One of  "High", "Medium", "Low"
 - "originalCode": Code snippet containing the issue
-- "suggestedFix": Revised or corrected code snippet
-- "explanation": Clear reasoning that helps a mid-level developer understand the fix
+- "suggestedFix": Corrected verison of code snippet
+- "explanation": Clear reasoning to help a mid-level developer understand the fix in 2-3 lines
 
 ---
 
-Strict Output Rules:
-- ✅ Output must be a **single valid JSON object** with keys: "projectMetaData" and "codeAnalysis"
-- ❌ Do **NOT** wrap output in json or triple backticks
-- ❌ Do **NOT** add comments, formatting, or extra text
-- ✅ All keys and values must use proper **double-quoted JSON syntax**
-- a cleand json you make it like this JSON.stringfy({projectMetaData:project data,codeAnalysis :data })
-- ✅ Include **all issues you can detect** — do not shorten the output for brevity
--- don't send incomplete response, try to make it valid json
+### Output Rules:
+- ✅ Always return a **single valid JSON object**
+- ✅ Try to find maximunum issues in the codebase (15-20 issues is ideal, prioritize Hign critical issues)
+- ✅ Keep output **within token limits**.  
+- ✅ Ensure JSON is **complete, properly closed, and valid**.  
+- ❌ Do NOT wrap in backticks or add comments.  
+- ❌ Do NOT leave the object half-finished.
+
 ---
 
 📁 Project Tree:
@@ -108,6 +100,7 @@ ${tree}
 
 📄 Full Code:
 ${codeSections}
+
 `
 }
 // import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -123,32 +116,62 @@ async function sendToGemini(prompt) {
         temperature: 0,
         topK: 1,
         topP: 1,
+        responseMimeType: "application/json",
       },
+      responseSchema : {
+  type: "object",
+  properties: {
+    projectMetaData: {
+      type: "object",
+      properties: {
+        projectType: { type: "string" },
+        technologiesUsed: {
+          type: "array",
+          items: { type: "string" }
+        },
+        probableProjectName: { type: "string" },
+        projectPurpose: { type: "string" }
+      },
+      required: ["projectType", "technologiesUsed", "probableProjectName", "projectPurpose"]
+    },
+    codeAnalysis: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          file: { type: "string" },
+          issueName: { type: "string" },
+          issue: { type: "string" },
+          severity: { type: "string", enum: ["Critical", "High", "Medium", "Low"] },
+          originalCode: { type: "string" },
+          suggestedFix: { type: "string" },
+          explanation: { type: "string" }
+        },
+        required: ["file", "issueName", "issue", "severity", "originalCode", "suggestedFix", "explanation"]
+      }
+    },
+    hasMore: { type: "boolean" },
+    nextStartIndex: { type: "integer" }
+  },
+  required: ["projectMetaData", "codeAnalysis"]
+}
+
     });
 
     const result = await model.generateContent(prompt);
     const text = result.response.text();
 
-    // Remove code block markers
-    const cleanedJson = text
-      .replace(/```json\s*/gi, "")
-      .replace(/```/g, "")
-      .trim();
+    console.log("original response:", text);
+   return text
+   
 
-    let parsed;
-    try {
-      parsed = JSON.parse(cleanedJson);
-    } catch (err) {
-      console.error("❌ Failed to parse JSON:", err.message);
-      throw new Error("Invalid JSON output from AI");
-    }
-
-    return parsed;
   } catch (error) {
     console.error("❌ Gemini SDK Error:", error.message);
-    throw error;
+    return { error: error.message };
   }
 }
+
+
 
 async function fetchRepoFromGitHub(gitUrl, outputDir = "uploads") {
   try {

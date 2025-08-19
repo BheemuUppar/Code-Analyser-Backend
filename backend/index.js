@@ -14,7 +14,11 @@ initSocket(server); // <-- Initialize socket.io with the HTTP server
 
 const router  = require("./src/router/router");
 
-app.use(cors());
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
 app.use(express.json());
 app.use((err, req, res, next) => {
   if (err) {

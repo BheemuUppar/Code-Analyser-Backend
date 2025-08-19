@@ -94,6 +94,7 @@ async function jobHandler(jobId) {
    updateStatus(jobId , "Processing with AI...")
   // ask gemini
   let response = await sendToGemini(prompt);
+  // console.log("Gemini response:", response);
   // send completion event
   await delay(2000);
   updateStatus(jobId , "Analysis complete");
