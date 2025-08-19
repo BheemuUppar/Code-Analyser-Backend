@@ -129,7 +129,7 @@ Analyze the project source code **deeply** and return a single valid JSON object
 - "probableProjectName": Inferred project name from code or file structure
 - "projectPurpose": Brief description (2–3 lines) of what the project does
 
-2. "codeAnalysis": An array of the **most important issues only** (ideally 8–12).
+2. "codeAnalysis": An array of the **most important issues only** (ideally 15–20).
 Each item must include:
 - "file": Relative file path
 - "issueName": Short 3–5 word title
