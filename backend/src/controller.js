@@ -3,10 +3,11 @@ const path = require("path");
 const axios = require("axios");
 require("dotenv").config();
 const AdmZip = require("adm-zip");
-const {INCLUDE_EXTENSIONS, EXCLUDE_PATTERNS} = require('./configuration');
+const {INCLUDE_EXTENSIONS, EXCLUDE_PATTERNS, staticPromt} = require('./configuration');
 
 // 🔐 Your Gemini API Key
-const API_KEY = process.env.geminiApiKey; // Replace with your actual key
+const API_KEY = process.env.geminiApiKey; // Replace with your actual key;
+
 
 
 
@@ -63,38 +64,8 @@ function buildPrompt(files, PROJECT_PATH) {
     .map((f) => `// File: ${path.relative(PROJECT_PATH, f.path)}\n${f.content}`)
     .join("\n\n");
 
-  return `You are an expert AI code reviewer.
-
-Analyze the project source code and return a single valid JSON object with exactly two top-level properties:
-
-1. "projectMetaData":
-- "projectType": Type of project (e.g., "Full-stack Web App", "Frontend SPA", "Backend API", "Mobile App", etc.)
-- "technologiesUsed": List of detected technologies and frameworks
-- "probableProjectName": Inferred project name from code or file structure
-- "projectPurpose": Brief description (2–3 lines) of what the project does
-
-2. "codeAnalysis": An array of detected issues in the codebase.  
-Each item must include:
-- "file": Relative file path
-- "issueName": Short 3–5 word title
-- "issue": Short explanation of the issue (max 10 lines)
-- "severity": One of  "High", "Medium", "Low"
-- "originalCode": Code snippet containing the issue
-- "suggestedFix": Corrected verison of code snippet
-- "explanation": Clear reasoning to help a mid-level developer understand the fix in 2-3 lines
-
+  return `${staticPromt}
 ---
-
-### Output Rules:
-- ✅ Always return a **single valid JSON object**
-- ✅ Try to find maximunum issues in the codebase (15-20 issues is ideal, prioritize Hign critical issues)
-- ✅ Keep output **within token limits**.  
-- ✅ Ensure JSON is **complete, properly closed, and valid**.  
-- ❌ Do NOT wrap in backticks or add comments.  
-- ❌ Do NOT leave the object half-finished.
-
----
-
 📁 Project Tree:
 ${tree}
 

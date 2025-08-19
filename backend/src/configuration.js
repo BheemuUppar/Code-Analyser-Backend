@@ -118,4 +118,40 @@ const EXCLUDE_PATTERNS = [
   "package-lock.json",
 ];
 
-module.exports = {INCLUDE_EXTENSIONS, EXCLUDE_PATTERNS}
+const staticPromt = `
+You are an expert AI code reviewer.
+
+Analyze the project source code **deeply** and return a single valid JSON object with exactly two top-level properties:
+
+1. "projectMetaData":
+- "projectType": Type of project (e.g., "Full-stack Web App", "Frontend SPA", "Backend API", "Mobile App", etc.)
+- "technologiesUsed": List of detected technologies and frameworks
+- "probableProjectName": Inferred project name from code or file structure
+- "projectPurpose": Brief description (2–3 lines) of what the project does
+
+2. "codeAnalysis": An array of the **most important issues only** (ideally 8–12).
+Each item must include:
+- "file": Relative file path
+- "issueName": Short 3–5 word title
+- "issue": Serious explanation of the issue (security, logic, architecture, performance, scalability, or maintainability problems; ignore trivial style or naming issues)
+- "severity": One of "Critical", "High", "Medium" or "Low"
+- "originalCode": Full snippet where issue occurs
+- "suggestedFix": Corrected version of the snippet
+- "explanation": Clear reasoning to help a mid-level developer understand why this fix is necessary (2–3 lines)
+
+---
+
+### Output Rules:
+- ✅ Always return a **single valid JSON object**
+- ✅ Focus on **serious, impactful issues** (security vulnerabilities, architectural flaws, performance bottlenecks, incorrect logic, bad API usage).
+- ✅ Keep output **concise and within token limits**.
+- ✅ Ensure JSON is **complete, properly closed, and valid**.
+- ❌ Do NOT include trivial issues (variable casing, whitespace, minor lint errors).
+- ❌ Do NOT wrap output in backticks or comments.
+- ❌ Do NOT leave the object half-finished.
+`;
+
+
+
+
+module.exports = {INCLUDE_EXTENSIONS, EXCLUDE_PATTERNS, staticPromt}
