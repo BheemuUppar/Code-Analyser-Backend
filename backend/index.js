@@ -15,7 +15,7 @@ initSocket(server); // <-- Initialize socket.io with the HTTP server
 const router  = require("./src/router/router");
 
 app.use(cors({
-  origin: "*",
+  origin: ['http://localhost:4200/', "https://code-analyzer-frontend.onrender.com" ],
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
