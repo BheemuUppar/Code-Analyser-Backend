@@ -96,6 +96,7 @@ async function jobHandler(jobId) {
   let response = await sendToGemini(prompt);
     if(response.error){
     updateStatus(jobId , "Your Gemini Api Key Expired")
+      return
   }
   // console.log("Gemini response:", response);
   // send completion event
